@@ -6,11 +6,11 @@ PrinterDost is an Android-based network printer discovery and troubleshooting ap
 
 ### Home Screen
 
-![PrinterDost Home Screen](screenshots/home.png)
+![PrinterDost Home Screen](screenshots/home.jpg)
 
 ### Network Printer Discovery
 
-![Printer Discovery Scan](screenshots/scan.png)
+![Printer Discovery Scan](screenshots/scan.jpg)
 
 ## Features
 
