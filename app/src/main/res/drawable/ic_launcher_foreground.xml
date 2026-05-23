@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Printer Paper Tray Behind -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M40,24 h28 v14 h-28 z" />
+    
+    <!-- Printer Body -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="M24,38 h60 c3.3,0 6,2.7 6,6 v22 c0,3.3 -2.7,6 -6,6 h-8 v10 c0,1.1 -0.9,2 -2,2 h-36 c-1.1,0 -2,-0.9 -2,-2 v-10 h-8 c-3.3,0 -6,-2.7 -6,-6 v-22 c0,-3.3 2.7,-6 6,-6 z" />
+
+    <!-- Paper Output Tray -->
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M34,60 h40 v18 h-40 z" />
+
+    <!-- Lines of printed text on the paper -->
+    <path
+        android:fillColor="#94A3B8"
+        android:pathData="M38,64 h32 v1.5 h-32 z" />
+    <path
+        android:fillColor="#94A3B8"
+        android:pathData="M38,68 h26 v1.5 h-26 z" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M38,72 h32 v1.5 h-32 z" />
+
+    <!-- Power State LED (Cyan pulsing active vibe) -->
+    <path
+        android:fillColor="#0EA5E9"
+        android:pathData="M74,48 A 2.5 2.5 0 1 1 74.001,48" />
+
+    <!-- Troubleshooting Red Overlay Badge on lower right -->
+    <path
+        android:fillColor="#EF4444"
+        android:pathData="M78,68 A 11 11 0 1 1 78.001,68" strokeColor="#FFFFFF" strokeWidth="1.5" />
+        
+    <!-- Wrench emblem inside Badge (White) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M74.8,61.5 c-0.6,-0.6 -1.5,-0.6 -2.1,0 l-5,5 l1.2,1.2 l4.4,-4.4 c0.6,-0.6 0.6,-1.5 0,-2.1 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M71.2,67.8 l-5.5,5.5 c-0.4,0.4 -1.1,0.4 -1.5,0 l0,0 c-0.4,-0.4 -0.4,-1.1 0,-1.5 l5.5,-5.5 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M65.2,67.3 A 3.2 3.2 0 1 1 65.201,67.3" />
+
+</vector>

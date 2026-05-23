@@ -1,0 +1,6 @@
+{
+  "name": "PrinterDost",
+  "description": "Network Printer Troubleshooting Assistant for diagnosing and resolving network printer connectivity and usage concerns.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
