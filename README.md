@@ -22,15 +22,6 @@ PrinterDost was developed as a practical IT support utility to simplify common p
 - 📱 Mobile-friendly troubleshooting workflow
 - 🎯 Designed for IT support and office environments
 
-## Screenshots
-
-### Home Screen
-
-![PrinterDost Home Screen](screenshots/home.jpg)
-
-### Network Printer Discovery
-
-![Printer Discovery Scan](screenshots/scan.jpg)
 
 ## Technology Stack
 
