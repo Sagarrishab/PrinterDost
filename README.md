@@ -1,44 +1,87 @@
 # PrinterDost
 
-PrinterDost is an Android-based printer troubleshooting and diagnostics application designed for IT support professionals and office environments.
+PrinterDost is an Android-based network printer discovery and troubleshooting application designed to help IT support professionals quickly identify, diagnose, and manage printers within local network environments.
+
+## Screenshots
+
+### Home Screen
+
+![PrinterDost Home Screen](screenshots/home.png)
+
+### Network Printer Discovery
+
+![Printer Discovery Scan](screenshots/scan.png)
 
 ## Features
 
-- Network printer discovery
-- Printer status monitoring
-- Quick access to printer management portal
-- Printer diagnostics and troubleshooting
-- Local network scanning
-- Troubleshooting history tracking
+- Discover printers connected to the local network
+- Scan subnets to identify active printer devices
+- View printer status and connectivity information
+- Quick access to printer web management interfaces
+- Simplified troubleshooting workflow for common printer issues
+- AI-assisted troubleshooting support
+- User-friendly interface optimized for IT support operations
 
-## Technologies Used
+## Technology Stack
 
 - Android Studio
 - Kotlin
-- Material Design
-- Networking APIs
+- Material Design 3
+- Android Networking APIs
+- Google Gemini API
 
 ## Use Cases
 
 - IT Support Engineers
 - Desktop Support Teams
+- System Administrators
 - Office Administrators
 - Small Business Environments
 
+## Getting Started
+
+### Prerequisites
+
+- Android Studio (latest stable version)
+- Android SDK
+- Gemini API Key
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/PrinterDost.git
+```
+
+2. Open the project in Android Studio.
+
+3. Allow Gradle synchronization to complete.
+
+4. Create a `.env` file in the project root directory.
+
+5. Add your Gemini API key:
+
+```env
+GEMINI_API_KEY=your_api_key_here
+```
+
+Refer to `.env.example` for the required format.
+
+6. Build and run the application on an Android emulator or physical Android device.
+
+## Project Objective
+
+PrinterDost was developed as a practical IT support utility to reduce the time required for diagnosing and resolving common printer-related issues. The application combines printer discovery, status monitoring, management access, and AI-assisted troubleshooting into a single mobile interface.
+
 ## Developer
 
-Sagar Saini
-IT Support Engineer
+**Sagar Saini**
 
+IT Support Engineer | Microsoft 365 | Desktop Support | System Administration
 
-## Run Locally
+LinkedIn: https://linkedin.com/in/sagarsainiknp
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+## License
 
-
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+This project is provided for educational, portfolio, and demonstration purposes.
