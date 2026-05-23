@@ -2,6 +2,26 @@
 
 PrinterDost is an Android-based network printer discovery and troubleshooting application designed to help IT support professionals quickly identify, diagnose, and manage printers within local network environments.
 
+<p align="center">
+  <img src="screenshots/home.jpg" alt="PrinterDost Home Screen" width="280"/>
+  <img src="screenshots/scan.jpg" alt="Network Printer Discovery" width="280"/>
+</p>
+
+## Overview
+
+PrinterDost was developed as a practical IT support utility to simplify common printer troubleshooting tasks. The application enables users to discover printers on the local network, monitor printer status, access printer management interfaces, and receive troubleshooting assistance from a mobile device.
+
+## Features
+
+- 🔍 Network printer discovery
+- 🌐 Local subnet scanning
+- 🖨 Printer status monitoring
+- ⚙ Quick access to printer web management portals
+- 🤖 AI-assisted troubleshooting support
+- 📡 Network connectivity validation
+- 📱 Mobile-friendly troubleshooting workflow
+- 🎯 Designed for IT support and office environments
+
 ## Screenshots
 
 ### Home Screen
@@ -12,41 +32,44 @@ PrinterDost is an Android-based network printer discovery and troubleshooting ap
 
 ![Printer Discovery Scan](screenshots/scan.jpg)
 
-## Features
-
-- Discover printers connected to the local network
-- Scan subnets to identify active printer devices
-- View printer status and connectivity information
-- Quick access to printer web management interfaces
-- Simplified troubleshooting workflow for common printer issues
-- AI-assisted troubleshooting support
-- User-friendly interface optimized for IT support operations
-
 ## Technology Stack
 
-- Android Studio
 - Kotlin
+- Android Studio
 - Material Design 3
 - Android Networking APIs
 - Google Gemini API
+- Gradle Kotlin DSL
 
 ## Use Cases
 
-- IT Support Engineers
-- Desktop Support Teams
-- System Administrators
-- Office Administrators
-- Small Business Environments
+### IT Support Engineers
 
-## Getting Started
+- Quickly locate printers on office networks
+- Access printer management portals
+- Verify printer availability and connectivity
+
+### Desktop Support Teams
+
+- Reduce printer troubleshooting time
+- Identify network printer issues
+- Simplify support operations
+
+### Office Administrators
+
+- Monitor printer accessibility
+- Access printer interfaces from mobile devices
+- Assist users with common printing issues
+
+## Installation
 
 ### Prerequisites
 
-- Android Studio (latest stable version)
+- Android Studio (Latest Stable Version)
 - Android SDK
-- Gemini API Key
+- Gemini API Key (Required for AI features)
 
-### Installation
+### Setup
 
 1. Clone the repository:
 
@@ -68,11 +91,35 @@ GEMINI_API_KEY=your_api_key_here
 
 Refer to `.env.example` for the required format.
 
-6. Build and run the application on an Android emulator or physical Android device.
+6. Build and run the application on:
 
-## Project Objective
+- Android Emulator
+- Physical Android Device
 
-PrinterDost was developed as a practical IT support utility to reduce the time required for diagnosing and resolving common printer-related issues. The application combines printer discovery, status monitoring, management access, and AI-assisted troubleshooting into a single mobile interface.
+## Project Structure
+
+```text
+PrinterDost/
+│
+├── app/
+├── screenshots/
+│   ├── home.jpg
+│   └── scan.jpg
+├── .env.example
+├── README.md
+├── build.gradle.kts
+├── settings.gradle.kts
+└── gradle.properties
+```
+
+## Future Enhancements
+
+- Multi-printer dashboard
+- Advanced printer diagnostics
+- Exportable troubleshooting reports
+- Printer health monitoring
+- Enhanced AI troubleshooting recommendations
+- Additional printer vendor integrations
 
 ## Developer
 
@@ -80,8 +127,27 @@ PrinterDost was developed as a practical IT support utility to reduce the time r
 
 IT Support Engineer | Microsoft 365 | Desktop Support | System Administration
 
-LinkedIn: https://linkedin.com/in/sagarsainiknp
+### Skills
+
+- Microsoft 365
+- Windows Administration
+- Desktop Support
+- Active Directory
+- Google Workspace
+- Networking
+- Printer Troubleshooting
+- Technical Support
+
+LinkedIn:
+https://linkedin.com/in/sagarsainiknp
+
+GitHub:
+https://github.com/Sagarrishab
 
 ## License
 
-This project is provided for educational, portfolio, and demonstration purposes.
+This project is available for educational, portfolio, and demonstration purposes.
+
+---
+
+⭐ If you find this project useful, consider starring the repository.
