@@ -1,3 +1,36 @@
+# PrinterDost
+
+PrinterDost is an Android-based printer troubleshooting and diagnostics application designed for IT support professionals and office environments.
+
+## Features
+
+- Network printer discovery
+- Printer status monitoring
+- Quick access to printer management portal
+- Printer diagnostics and troubleshooting
+- Local network scanning
+- Troubleshooting history tracking
+
+## Technologies Used
+
+- Android Studio
+- Kotlin
+- Material Design
+- Networking APIs
+
+## Use Cases
+
+- IT Support Engineers
+- Desktop Support Teams
+- Office Administrators
+- Small Business Environments
+
+## Developer
+
+Sagar Saini
+IT Support Engineer
+
+
 ## Run Locally
 
 **Prerequisites:**  [Android Studio](https://developer.android.com/studio)
