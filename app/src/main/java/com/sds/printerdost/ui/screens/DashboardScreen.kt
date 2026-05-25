@@ -71,9 +71,9 @@ fun DashboardScreen(
     var showApiKeyDialog by remember { mutableStateOf(false) }
 
     // If a WebView is active, overlay it full-screen
-    if (webViewUrl != null) {
+    webViewUrl?.let { urlString ->
         PrinterWebView(
-            url = webViewUrl!!,
+            url = urlString,
             onClose = { viewModel.closeAdminConsole() }
         )
         return
@@ -273,18 +273,19 @@ fun DashboardScreen(
                         colors = CardDefaults.cardColors(containerColor = DeepSlate.copy(alpha = 0.85f)),
                         border = BorderStroke(1.dp, LightSlate)
                     ) {
-                        if (selectedPrinter != null) {
+                        val printer = selectedPrinter
+                        if (printer != null) {
                             PrinterDetailsView(
-                                printer = selectedPrinter!!,
+                                printer = printer,
                                 activeSymptom = activeSymptom,
                                 onSymptomSelect = { viewModel.activeSymptom.value = it },
                                 isAIThinking = isAIThinking,
                                 aiDiagnosisResult = aiDiagnosisResult,
-                                logs = logs.filter { it.printerId == selectedPrinter!!.id },
+                                logs = logs.filter { it.printerId == printer.id },
                                 onConsultAiClick = { viewModel.performAiDiagnosis(activeSymptom) },
-                                onDeleteClick = { viewModel.deletePrinter(selectedPrinter!!) },
-                                onOpenAdminClick = { viewModel.openAdminConsole(selectedPrinter!!.ipAddress, selectedPrinter!!.name, selectedPrinter!!.brand, selectedPrinter!!.id) },
-                                onSingleTest = { viewModel.runSingleDiagnostics(selectedPrinter!!) }
+                                onDeleteClick = { viewModel.deletePrinter(printer) },
+                                onOpenAdminClick = { viewModel.openAdminConsole(printer.ipAddress, printer.name, printer.brand, printer.id) },
+                                onSingleTest = { viewModel.runSingleDiagnostics(printer) }
                             )
                         } else {
                             EmptyDetailsView()
@@ -363,7 +364,8 @@ fun DashboardScreen(
                                 )
                             }
                             1 -> {
-                                if (selectedPrinter != null) {
+                                val printer = selectedPrinter
+                                if (printer != null) {
                                     Card(
                                         modifier = Modifier.fillMaxSize(),
                                         shape = RoundedCornerShape(16.dp),
@@ -371,16 +373,16 @@ fun DashboardScreen(
                                         border = BorderStroke(1.dp, LightSlate)
                                     ) {
                                         PrinterDetailsView(
-                                            printer = selectedPrinter!!,
+                                            printer = printer,
                                             activeSymptom = activeSymptom,
                                             onSymptomSelect = { viewModel.activeSymptom.value = it },
                                             isAIThinking = isAIThinking,
                                             aiDiagnosisResult = aiDiagnosisResult,
-                                            logs = logs.filter { it.printerId == selectedPrinter!!.id },
+                                            logs = logs.filter { it.printerId == printer.id },
                                             onConsultAiClick = { viewModel.performAiDiagnosis(activeSymptom) },
-                                            onDeleteClick = { viewModel.deletePrinter(selectedPrinter!!) },
-                                            onOpenAdminClick = { viewModel.openAdminConsole(selectedPrinter!!.ipAddress, selectedPrinter!!.name, selectedPrinter!!.brand, selectedPrinter!!.id) },
-                                            onSingleTest = { viewModel.runSingleDiagnostics(selectedPrinter!!) }
+                                            onDeleteClick = { viewModel.deletePrinter(printer) },
+                                            onOpenAdminClick = { viewModel.openAdminConsole(printer.ipAddress, printer.name, printer.brand, printer.id) },
+                                            onSingleTest = { viewModel.runSingleDiagnostics(printer) }
                                         )
                                     }
                                 } else {

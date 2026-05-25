@@ -8,6 +8,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.WebChromeClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,6 +42,18 @@ fun PrinterWebView(
     var loadingProgress by remember { mutableIntStateOf(0) }
     var hasError by remember { mutableStateOf(false) }
     var forceSimulated by remember { mutableStateOf(false) }
+    var webViewResetKey by remember { mutableIntStateOf(0) }
+    var authHandler by remember { mutableStateOf<android.webkit.HttpAuthHandler?>(null) }
+    var authHost by remember { mutableStateOf("") }
+    var authRealm by remember { mutableStateOf("") }
+
+    BackHandler(enabled = true) {
+        if (webViewRef?.canGoBack() == true) {
+            webViewRef?.goBack()
+        } else {
+            onClose()
+        }
+    }
 
     // Strip schemas to find raw IP
     val rawIp = remember(url) {
@@ -356,8 +370,9 @@ fun PrinterWebView(
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            AndroidView(
-                factory = { context ->
+            key(webViewResetKey) {
+                AndroidView(
+                    factory = { context ->
                     WebView(context).apply {
                         layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -425,8 +440,19 @@ fun PrinterWebView(
                                 detail: android.webkit.RenderProcessGoneDetail?
                             ): Boolean {
                                 hasError = true
-                                view?.loadDataWithBaseURL("https://printerdost.local", simulatedHtml, "text/html", "UTF-8", null)
+                                webViewResetKey++
                                 return true // Prevent the app process from crashing
+                            }
+
+                            override fun onReceivedHttpAuthRequest(
+                                view: WebView?,
+                                handler: android.webkit.HttpAuthHandler?,
+                                host: String?,
+                                realm: String?
+                            ) {
+                                authHost = host ?: ""
+                                authRealm = realm ?: ""
+                                authHandler = handler
                             }
                         }
 
@@ -488,6 +514,7 @@ fun PrinterWebView(
                 },
                 modifier = Modifier.fillMaxSize()
             )
+            }
 
             if (loadingProgress < 100 && !hasError && !forceSimulated) {
                 Box(
@@ -569,6 +596,112 @@ fun PrinterWebView(
                 }
             }
         }
+    }
+
+    if (authHandler != null) {
+        var username by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+        var passwordVisible by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = {
+                authHandler?.cancel()
+                authHandler = null
+            },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Lock, contentDescription = "Lock", tint = CyberTeal)
+                    Text(
+                        text = "Sign In Required",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                }
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val realmDesc = if (authRealm.isNotEmpty()) " (Realm: $authRealm)" else ""
+                    Text(
+                        text = "The printer at $authHost$realmDesc requires administrator credentials to proceed. Please enter them below:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextMuted
+                    )
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text("Username") },
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextPrimary),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = CyberTeal,
+                            unfocusedBorderColor = LightSlate,
+                            focusedLabelColor = CyberTeal,
+                            unfocusedLabelColor = TextMuted
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextPrimary),
+                        visualTransformation = if (passwordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Password
+                        ),
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Default.Info else Icons.Default.Lock,
+                                    contentDescription = "Toggle Visibility",
+                                    tint = TextMuted
+                                )
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = CyberTeal,
+                            unfocusedBorderColor = LightSlate,
+                            focusedLabelColor = CyberTeal,
+                            unfocusedLabelColor = TextMuted
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        authHandler?.proceed(username, password)
+                        authHandler = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CyberTeal,
+                        contentColor = MidnightBlue
+                    )
+                ) {
+                    Text("OK", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        authHandler?.cancel()
+                        authHandler = null
+                    }
+                ) {
+                    Text("Cancel", color = TextMuted)
+                }
+            },
+            containerColor = DeepSlate
+        )
     }
 
     DisposableEffect(Unit) {
