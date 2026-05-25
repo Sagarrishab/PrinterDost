@@ -180,4 +180,27 @@ class PrinterRepository(private val printerDao: PrinterDao) {
             "AIS Diagnostics Link Fail: Unable to retrieve live AI guidance. Network Error: ${e.message}. Please check if you have connected your device to the Internet or if your GEMINI_API_KEY is active in the secrets."
         }
     }
+
+    /**
+     * Executes custom content synthesis using Gemini AI for USB diagnostics or general prompts.
+     */
+    suspend fun queryGeminiDiagnosisCustom(prompt: String): String = withContext(Dispatchers.IO) {
+        val apiKey = BuildConfig.GEMINI_API_KEY
+        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
+            return@withContext "API Configuration Error: Please enter a valid Gemini API Key in the AI Studio secrets panel to unlock AI diagnostics."
+        }
+
+        val request = GenerateContentRequest(
+            contents = listOf(Content(parts = listOf(Part(text = prompt)))),
+            systemInstruction = Content(parts = listOf(Part(text = "You are PrinterDost, a professional USB hardware and network printer support assistant. Give concise, highly scientific, structured support with clean bold typography and zero conversational filler.")))
+        )
+
+        try {
+            val response = RetrofitClient.geminiService.generateContent(apiKey, request)
+            response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text 
+                ?: "Received empty response from PrinterDost Assistant."
+        } catch (e: Exception) {
+            "AIS Diagnostics Link Fail: Unable to retrieve live AI guidance. Network Error: ${e.message}."
+        }
+    }
 }

@@ -61,7 +61,13 @@ fun DashboardScreen(
     val showEditDialog by viewModel.showEditPrinterDialog.collectAsStateWithLifecycle()
     val webViewUrl by viewModel.webViewUrl.collectAsStateWithLifecycle()
 
-    var activeTab by remember { mutableStateOf(0) } // 0: Printers, 1: AI Diagnostics, 2: Scan Logs
+    val usbPrinterConnected by viewModel.usbPrinterConnected.collectAsStateWithLifecycle()
+    val usbDeviceInfo by viewModel.usbDeviceInfo.collectAsStateWithLifecycle()
+    val usbDeviceNameState by viewModel.usbDeviceNameState.collectAsStateWithLifecycle()
+    val isUsbTroubleshooting by viewModel.isUsbTroubleshooting.collectAsStateWithLifecycle()
+    val usbTroubleshootLogs by viewModel.usbTroubleshootLogs.collectAsStateWithLifecycle()
+
+    var activeTab by remember { mutableStateOf(0) } // 0: Printers, 1: AI Diagnostics, 2: Scan Logs, 3: USB
 
     // If a WebView is active, overlay it full-screen
     if (webViewUrl != null) {
@@ -304,17 +310,22 @@ fun DashboardScreen(
                         Tab(
                             selected = activeTab == 0,
                             onClick = { activeTab = 0 },
-                            text = { Text("Printers", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                            text = { Text("Printers", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
                         )
                         Tab(
                             selected = activeTab == 1,
                             onClick = { activeTab = 1 },
-                            text = { Text("AI Assistant", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                            text = { Text("AI Assistant", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
                         )
                         Tab(
                             selected = activeTab == 2,
                             onClick = { activeTab = 2 },
-                            text = { Text("Diagnosis History", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                            text = { Text("History", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                        )
+                        Tab(
+                            selected = activeTab == 3,
+                            onClick = { activeTab = 3 },
+                            text = { Text("USB Connect", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
                         )
                     }
 
@@ -368,6 +379,11 @@ fun DashboardScreen(
                                 DiagnosticLogsView(
                                     logs = logs,
                                     onClearAll = { viewModel.clearLogHistory() }
+                                )
+                            }
+                            3 -> {
+                                UsbTroubleshootView(
+                                    viewModel = viewModel
                                 )
                             }
                         }
@@ -1193,6 +1209,245 @@ fun AddPrinterDialog(
                         modifier = Modifier.testTag("submit_printer_dialog_button")
                     ) {
                         Text("Declare", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun UsbTroubleshootView(
+    viewModel: PrinterViewModel,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val usbPrinterConnected by viewModel.usbPrinterConnected.collectAsStateWithLifecycle()
+    val usbDeviceInfo by viewModel.usbDeviceInfo.collectAsStateWithLifecycle()
+    val usbDeviceNameState by viewModel.usbDeviceNameState.collectAsStateWithLifecycle()
+    val isUsbTroubleshooting by viewModel.isUsbTroubleshooting.collectAsStateWithLifecycle()
+    val usbTroubleshootLogs by viewModel.usbTroubleshootLogs.collectAsStateWithLifecycle()
+
+    Card(
+        modifier = modifier.fillMaxSize(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = DeepSlate),
+        border = BorderStroke(1.dp, LightSlate)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                text = "USB OTG Connection Hub",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+            Text(
+                text = "Troubleshoot and diagnose physical printers connected directly via USB OTG cables.",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextMuted,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Connection Status Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (usbPrinterConnected) SuccessGreen.copy(alpha = 0.08f) else MidnightBlue
+                ),
+                border = BorderStroke(1.dp, if (usbPrinterConnected) SuccessGreen.copy(alpha = 0.4f) else LightSlate)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (usbPrinterConnected) Icons.Default.CheckCircle else Icons.Default.Info,
+                        contentDescription = "USB Status Indicator",
+                        tint = if (usbPrinterConnected) SuccessGreen else CyberBlue,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (usbPrinterConnected) usbDeviceNameState ?: "USB Printer Connected" else "USB Printer Disconnected",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (usbPrinterConnected) usbDeviceInfo ?: "Descriptors ready" else "Connect your printer via USB OTG cable & scan",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextMuted
+                        )
+                    }
+
+                    if (usbPrinterConnected) {
+                        TextButton(
+                            onClick = { viewModel.disconnectUsbPrinter() }
+                        ) {
+                            Text("Disconnect", color = ErrorCoral, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Action Buttons Row
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = { viewModel.scanAndConnectUsbPrinter(context) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CyberBlue,
+                        contentColor = MidnightBlue
+                    ),
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Scan")
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Scan USB Bus", fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Button(
+                    onClick = { viewModel.troubleshootUsbPrinter(context) },
+                    enabled = usbPrinterConnected && !isUsbTroubleshooting,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CyberTeal,
+                        contentColor = MidnightBlue,
+                        disabledContainerColor = LightSlate.copy(alpha = 0.3f),
+                        disabledContentColor = TextMuted
+                    ),
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    if (isUsbTroubleshooting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MidnightBlue,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Diagnosing...", fontWeight = FontWeight.Bold)
+                    } else {
+                        Icon(Icons.Default.Build, contentDescription = "Fix")
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Troubleshoot", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Sequence Diagnostics Logs
+            Text(
+                text = "Troubleshooting Sequence & AI Output",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 200.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MidnightBlue),
+                border = BorderStroke(1.dp, LightSlate)
+            ) {
+                if (usbTroubleshootLogs.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 200.dp)
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "No Logs Icon",
+                                tint = TextMuted,
+                                modifier = Modifier.size(36.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "No scan or troubleshooting results yet.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                "Tap 'Scan USB Bus' above to query connection registry.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                    ) {
+                        usbTroubleshootLogs.forEach { log ->
+                            if (log.startsWith("Gemini AI") || log.startsWith("USB Diagnostics Complete") || log.contains("Offline Fallback Guide")) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(verticalAlignment = Alignment.Top) {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = "AI Indicator Icon",
+                                        tint = CyberTeal,
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .padding(top = 2.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = log,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = CyberTeal
+                                    )
+                                }
+                            } else if (log.contains("ERROR")) {
+                                Row(verticalAlignment = Alignment.Top) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = "Error Indicator Icon",
+                                        tint = ErrorCoral,
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .padding(top = 2.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = log,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = ErrorCoral
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = log,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = TextPrimary,
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
