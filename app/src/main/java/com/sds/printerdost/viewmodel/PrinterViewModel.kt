@@ -86,6 +86,29 @@ class PrinterViewModel(application: Application) : AndroidViewModel(application)
     val showEditPrinterDialog = MutableStateFlow(false)
     val webViewUrl = MutableStateFlow<String?>(null) // For admin console direct access WebView
 
+    // Key persistence and configuration
+    private val sharedPrefs = application.getSharedPreferences("printer_dost_prefs", Context.MODE_PRIVATE)
+    val useCustomApiKey = MutableStateFlow<Boolean>(sharedPrefs.getBoolean("use_custom_api_key", false))
+    val customApiKey = MutableStateFlow<String>(sharedPrefs.getString("custom_api_key", "AIzaSyBixUCp_2fu-HiM5SVd5X8jYWeE6jykBnc") ?: "AIzaSyBixUCp_2fu-HiM5SVd5X8jYWeE6jykBnc")
+
+    fun setUseCustomApiKey(value: Boolean) {
+        useCustomApiKey.value = value
+        sharedPrefs.edit().putBoolean("use_custom_api_key", value).apply()
+    }
+
+    fun setCustomApiKey(value: String) {
+        customApiKey.value = value
+        sharedPrefs.edit().putString("custom_api_key", value).apply()
+    }
+
+    fun getActiveApiKey(): String {
+        return if (useCustomApiKey.value) {
+            customApiKey.value
+        } else {
+            com.sds.printerdost.BuildConfig.GEMINI_API_KEY
+        }
+    }
+
     // USB Printer connection & troubleshooting states
     val usbPrinterConnected = MutableStateFlow<Boolean>(false)
     val usbDeviceInfo = MutableStateFlow<String?>(null)
@@ -428,7 +451,8 @@ class PrinterViewModel(application: Application) : AndroidViewModel(application)
                 isAIThinking.value = true
                 aiDiagnosisResult.value = null
                 
-                val result = repository.queryGeminiDiagnosis(printer, symptom)
+                val customKey = if (useCustomApiKey.value) customApiKey.value else null
+                val result = repository.queryGeminiDiagnosis(printer, symptom, customKey)
                 aiDiagnosisResult.value = result
 
                 // Save this diagnosis to historic diagnostic logs database
@@ -623,7 +647,7 @@ class PrinterViewModel(application: Application) : AndroidViewModel(application)
             usbTroubleshootLogs.value = logs.toList()
             
             try {
-                val apiKey = com.sds.printerdost.BuildConfig.GEMINI_API_KEY
+                val apiKey = getActiveApiKey()
                 var aiDiagnosticText = ""
                 
                 if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
@@ -647,7 +671,8 @@ class PrinterViewModel(application: Application) : AndroidViewModel(application)
                         Provide clear, professional, friendly 1-2-3 bullet points to resolve the issues.
                     """.trimIndent()
                     
-                    aiDiagnosticText = repository.queryGeminiDiagnosisCustom(prompt)
+                    val customKey = if (useCustomApiKey.value) customApiKey.value else null
+                    aiDiagnosticText = repository.queryGeminiDiagnosisCustom(prompt, customKey)
                 }
                 
                 logs.add("------------------------------------")

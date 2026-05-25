@@ -123,11 +123,12 @@ class PrinterRepository(private val printerDao: PrinterDao) {
      */
     suspend fun queryGeminiDiagnosis(
         printer: PrinterEntity,
-        symptom: String
+        symptom: String,
+        customKey: String? = null
     ): String = withContext(Dispatchers.IO) {
-        val apiKey = BuildConfig.GEMINI_API_KEY
+        val apiKey = if (!customKey.isNullOrBlank()) customKey else BuildConfig.GEMINI_API_KEY
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
-            return@withContext "API Configuration Error: Please enter a valid Gemini API Key in the AI Studio secrets panel to unlock AI diagnostics. Currently, your simulated diagnostics can operate on offline guidelines."
+            return@withContext "API Configuration Error: Please enter a valid Gemini API Key in the AI Studio secrets panel or configure a custom API Key in settings to unlock AI diagnostics. Currently, your simulated diagnostics can operate on offline guidelines."
         }
 
         val portStatus = listOfNotNull(
@@ -184,8 +185,8 @@ class PrinterRepository(private val printerDao: PrinterDao) {
     /**
      * Executes custom content synthesis using Gemini AI for USB diagnostics or general prompts.
      */
-    suspend fun queryGeminiDiagnosisCustom(prompt: String): String = withContext(Dispatchers.IO) {
-        val apiKey = BuildConfig.GEMINI_API_KEY
+    suspend fun queryGeminiDiagnosisCustom(prompt: String, customKey: String? = null): String = withContext(Dispatchers.IO) {
+        val apiKey = if (!customKey.isNullOrBlank()) customKey else BuildConfig.GEMINI_API_KEY
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
             return@withContext "API Configuration Error: Please enter a valid Gemini API Key in the AI Studio secrets panel to unlock AI diagnostics."
         }

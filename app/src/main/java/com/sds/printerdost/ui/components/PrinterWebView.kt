@@ -9,12 +9,14 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.WebChromeClient
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -384,6 +386,86 @@ fun PrinterWebView(
                 },
                 modifier = Modifier.fillMaxSize()
             )
+
+            if (loadingProgress < 100 && !hasError && !forceSimulated) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MidnightBlue),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            color = CyberTeal,
+                            strokeWidth = 3.dp,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "Awaiting Printer Web-Console Connection...",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Target Address: $url",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            color = CyberBlue,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = DeepSlate),
+                            border = BorderStroke(1.dp, LightSlate.copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(imageVector = Icons.Default.Info, contentDescription = "Emulator Note", tint = CyberTeal)
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = "Cloud Emulator Connection",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Your streaming cloud emulator cannot route requests to physical local network IP addresses (192.168.x.x). To explore this gateway, please load the simulated console.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextMuted,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(
+                                    onClick = {
+                                        forceSimulated = true
+                                        webViewRef?.loadDataWithBaseURL("https://printerdost.local", simulatedHtml, "text/html", "UTF-8", null)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = CyberTeal,
+                                        contentColor = MidnightBlue
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(imageVector = Icons.Default.Build, contentDescription = "Simulate")
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Open Simulated Admin Page", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

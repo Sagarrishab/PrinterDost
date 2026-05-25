@@ -68,6 +68,7 @@ fun DashboardScreen(
     val usbTroubleshootLogs by viewModel.usbTroubleshootLogs.collectAsStateWithLifecycle()
 
     var activeTab by remember { mutableStateOf(0) } // 0: Printers, 1: AI Diagnostics, 2: Scan Logs, 3: USB
+    var showApiKeyDialog by remember { mutableStateOf(false) }
 
     // If a WebView is active, overlay it full-screen
     if (webViewUrl != null) {
@@ -115,6 +116,17 @@ fun DashboardScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { showApiKeyDialog = true },
+                        modifier = Modifier.testTag("api_key_settings_button")
+                    ) {
+                        val useCustomKey by viewModel.useCustomApiKey.collectAsStateWithLifecycle()
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Gemini API Key Settings",
+                            tint = if (useCustomKey) CyberTeal else TextMuted
+                        )
+                    }
                     IconButton(
                         onClick = { viewModel.refreshAllPrinters() },
                         modifier = Modifier.testTag("refresh_all_button")
@@ -400,6 +412,13 @@ fun DashboardScreen(
                 onAdd = { name, ip, brand, loc ->
                     viewModel.addPrinter(name, ip, brand, loc)
                 }
+            )
+        }
+
+        if (showApiKeyDialog) {
+            GeminiApiKeyDialog(
+                onDismiss = { showApiKeyDialog = false },
+                viewModel = viewModel
             )
         }
     }
@@ -1448,6 +1467,255 @@ fun UsbTroubleshootView(
                                 )
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GeminiApiKeyDialog(
+    onDismiss: () -> Unit,
+    viewModel: PrinterViewModel
+) {
+    val useCustomApiKey by viewModel.useCustomApiKey.collectAsStateWithLifecycle()
+    val customApiKey by viewModel.customApiKey.collectAsStateWithLifecycle()
+
+    var keyInputValue by remember { mutableStateOf(customApiKey) }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = DeepSlate),
+            shape = RoundedCornerShape(20.dp),
+            border = BorderStroke(1.dp, LightSlate),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .testTag("gemini_api_key_dialog")
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth()
+            ) {
+                // Header
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Security Config",
+                        tint = CyberTeal,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Gemini API Configuration",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                }
+
+                Text(
+                    text = "Configure which API key PrinterDost should use for deep diagnostics synthesis and USB troubleshooting.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextMuted,
+                    modifier = Modifier.padding(bottom = 20.dp)
+                )
+
+                // Option 1: Built-In Key Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .clickable { viewModel.setUseCustomApiKey(false) }
+                        .testTag("built_in_key_card"),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (!useCustomApiKey) MidnightBlue else DeepSlate.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(
+                        1.dp,
+                        if (!useCustomApiKey) CyberTeal.copy(alpha = 0.8f) else LightSlate.copy(alpha = 0.4f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RadioButton(
+                                selected = !useCustomApiKey,
+                                onClick = { viewModel.setUseCustomApiKey(false) },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = CyberTeal,
+                                    unselectedColor = TextMuted
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "AI Studio Built-In Key",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (!useCustomApiKey) CyberTeal else TextPrimary
+                                )
+                                Text(
+                                    text = "Use the default API key configured securely in the AI Studio platform secrets.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextMuted
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Button(
+                            onClick = { 
+                                viewModel.setUseCustomApiKey(false)
+                                onDismiss()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (!useCustomApiKey) CyberTeal else LightSlate.copy(alpha = 0.2f),
+                                contentColor = if (!useCustomApiKey) MidnightBlue else TextPrimary
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth().testTag("activate_built_in_button")
+                        ) {
+                            Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Activate")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (!useCustomApiKey) "Built-In Key Active" else "Use Built-In Key",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // Option 2: Custom Key Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("custom_key_card"),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (useCustomApiKey) MidnightBlue else DeepSlate.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(
+                        1.dp,
+                        if (useCustomApiKey) CyberTeal.copy(alpha = 0.8f) else LightSlate.copy(alpha = 0.4f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RadioButton(
+                                selected = useCustomApiKey,
+                                onClick = { viewModel.setUseCustomApiKey(true) },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = CyberTeal,
+                                    unselectedColor = TextMuted
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Custom User API Key",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (useCustomApiKey) CyberTeal else TextPrimary
+                                )
+                                Text(
+                                    text = "Insert your custom Gemini key to run independent high-speed API diagnostics.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextMuted
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Text field to view/edit custom API Key
+                        OutlinedTextField(
+                            value = keyInputValue,
+                            onValueChange = { keyInputValue = it },
+                            label = { Text("Insert Gemini API Key") },
+                            singleLine = true,
+                            visualTransformation = if (isPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                                    Icon(
+                                        imageVector = if (isPasswordVisible) Icons.Default.Info else Icons.Default.Lock,
+                                        contentDescription = "Toggle Visibility",
+                                        tint = TextMuted
+                                    )
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = CyberTeal,
+                                unfocusedBorderColor = LightSlate,
+                                focusedLabelColor = CyberTeal,
+                                unfocusedLabelColor = TextMuted
+                            ),
+                            placeholder = { Text("AIzaSy...", color = TextMuted.copy(alpha = 0.5f)) },
+                            modifier = Modifier.fillMaxWidth().testTag("custom_key_textfield")
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // Quick Load Default Fallback Button
+                            OutlinedButton(
+                                onClick = { keyInputValue = "AIzaSyBixUCp_2fu-HiM5SVd5X8jYWeE6jykBnc" },
+                                border = BorderStroke(1.dp, CyberTeal.copy(alpha = 0.5f)),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = CyberTeal),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f).testTag("load_fallback_key_button")
+                            ) {
+                                Text("Load Key", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                            }
+
+                            // Save and Activate Key
+                            Button(
+                                onClick = {
+                                    viewModel.setCustomApiKey(keyInputValue)
+                                    viewModel.setUseCustomApiKey(true)
+                                    onDismiss()
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (useCustomApiKey) CyberBlue else LightSlate.copy(alpha = 0.2f),
+                                    contentColor = if (useCustomApiKey) MidnightBlue else TextPrimary
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1.5f).testTag("save_and_use_key_button")
+                            ) {
+                                Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Save Key Icon")
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Save & Use", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Close / Cancel Button at the very bottom
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TextButton(onClick = onDismiss, modifier = Modifier.testTag("close_api_key_dialog_button")) {
+                        Text("Close Panel", color = TextMuted, fontWeight = FontWeight.Bold)
                     }
                 }
             }
