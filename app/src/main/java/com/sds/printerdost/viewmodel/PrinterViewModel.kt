@@ -362,7 +362,7 @@ class PrinterViewModel(application: Application) : AndroidViewModel(application)
                                             p9100 && p80 -> "HP"
                                             p631 && p80 -> "Canon"
                                             p515 -> "Brother"
-                                            p80 -> "Epson"
+                                            p9100 && (p631 || p80) -> "Epson"
                                             else -> "Generic"
                                         }
 

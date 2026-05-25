@@ -44,7 +44,13 @@ fun PrinterWebView(
     // Strip schemas to find raw IP
     val rawIp = url.replace("http://", "").replace("https://", "").split("/").firstOrNull() ?: "192.168.1.100"
 
-    val simulatedHtml = remember(rawIp) {
+    val tonerLevel = remember(rawIp) {
+        val hashCodeSeed = rawIp.hashCode()
+        val r = kotlin.random.Random(hashCodeSeed.toLong())
+        r.nextInt(25, 96) // Stable, custom value per IP, inside a realistic range (25% to 95%)
+    }
+
+    val simulatedHtml = remember(rawIp, tonerLevel) {
         """
         <!DOCTYPE html>
         <html>
@@ -172,10 +178,10 @@ fun PrinterWebView(
             <h2>Hardware Engine Diagnostics</h2>
             <div style="margin-bottom:8px; font-size:12px; display:flex; justify-content:space-between;">
               <span style="color:#94A3B8;">Toner/Ink Cartridge Levels</span>
-              <span id="inkPercent" style="font-weight:bold; color:#38BDF8;">94%</span>
+              <span id="inkPercent" style="font-weight:bold; color:#38BDF8;">$tonerLevel%</span>
             </div>
             <div style="background-color:#0F172A; border-radius:10px; height:12px; width:100%; overflow:hidden; border: 1px solid #334155;">
-              <div id="inkBar" style="background-color: #38BDF8; width:94%; height:100%; transition: width 0.5s ease-out;"></div>
+              <div id="inkBar" style="background-color: #38BDF8; width:$tonerLevel%; height:100%; transition: width 0.5s ease-out;"></div>
             </div>
           </div>
 
@@ -334,6 +340,10 @@ fun PrinterWebView(
                         
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
+                        settings.databaseEnabled = true
+                        settings.allowContentAccess = true
+                        settings.allowFileAccess = true
+                        settings.javaScriptCanOpenWindowsAutomatically = true
                         settings.useWideViewPort = true
                         settings.loadWithOverviewMode = true
                         
@@ -345,6 +355,17 @@ fun PrinterWebView(
                                 request: WebResourceRequest?
                             ): Boolean {
                                 return false
+                            }
+
+                            @SuppressLint("WebViewClientOnReceivedSslError")
+                            override fun onReceivedSslError(
+                                view: WebView?,
+                                handler: android.webkit.SslErrorHandler?,
+                                error: android.net.http.SslError?
+                            ) {
+                                // Real printer web administration pages in home networks use local self-signed SSL certs.
+                                // We proceed with connecting so redirects and settings pages (like HP laserjet setup) load successfully.
+                                handler?.proceed()
                             }
 
                             override fun onReceivedError(
