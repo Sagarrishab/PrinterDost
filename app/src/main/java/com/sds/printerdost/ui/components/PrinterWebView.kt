@@ -42,22 +42,49 @@ fun PrinterWebView(
     var forceSimulated by remember { mutableStateOf(false) }
 
     // Strip schemas to find raw IP
-    val rawIp = url.replace("http://", "").replace("https://", "").split("/").firstOrNull() ?: "192.168.1.100"
-
-    val tonerLevel = remember(rawIp) {
-        val hashCodeSeed = rawIp.hashCode()
-        val r = kotlin.random.Random(hashCodeSeed.toLong())
-        r.nextInt(25, 96) // Stable, custom value per IP, inside a realistic range (25% to 95%)
+    val rawIp = remember(url) {
+        val cleanUrl = url.replace("http://", "").replace("https://", "")
+        val hostAndPath = cleanUrl.split("?").firstOrNull() ?: cleanUrl
+        hostAndPath.split("/").firstOrNull() ?: "192.168.1.100"
     }
 
-    val simulatedHtml = remember(rawIp, tonerLevel) {
+    val parsedUri = remember(url) {
+        try {
+            android.net.Uri.parse(url)
+        } catch (t: Throwable) {
+            null
+        }
+    }
+
+    val printerName = parsedUri?.getQueryParameter("name")?.takeIf { it.isNotEmpty() } ?: "Embedded Printer"
+    val printerBrand = parsedUri?.getQueryParameter("model")?.takeIf { it.isNotEmpty() } ?: "Generic"
+    val printerId = parsedUri?.getQueryParameter("id") ?: "0"
+
+    val tonerLevel = remember(url, rawIp) {
+        val printerIdNum = printerId.toIntOrNull() ?: 0
+        val lastOctet = rawIp.split(".").lastOrNull()?.toIntOrNull() ?: 0
+        val salt = printerIdNum + lastOctet
+        val levels = listOf(78, 42, 89, 53, 91, 35, 67, 83, 49, 73, 31, 62, 95, 57, 46, 88)
+        levels[salt % levels.size]
+    }
+
+    val macAddress = remember(printerId, printerName) {
+        val seedString = printerId + "_" + printerName
+        val r = kotlin.random.Random(seedString.hashCode().toLong())
+        val bytes = ByteArray(6)
+        r.nextBytes(bytes)
+        bytes[0] = (bytes[0].toInt() and 0xFE or 0x02).toByte() // Local unicast bit
+        bytes.joinToString(":") { String.format("%02X", it) }
+    }
+
+    val simulatedHtml = remember(rawIp, tonerLevel, printerName, printerBrand, macAddress) {
         """
         <!DOCTYPE html>
         <html>
         <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>PrinterDost Admin Console</title>
+        <title>$printerBrand $printerName Admin Console</title>
         <style>
           body {
             background-color: #0F172A;
@@ -77,7 +104,7 @@ fun PrinterWebView(
           .title {
             font-size: 20px;
             font-weight: 800;
-            color: #38BDF8;
+            color: #2DD4BF;
             margin: 0;
           }
           .card {
@@ -91,7 +118,7 @@ fun PrinterWebView(
             margin-top: 0;
             font-size: 13px;
             font-weight: 700;
-            color: #2DD4BF;
+            color: #38BDF8;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 12px;
@@ -148,7 +175,7 @@ fun PrinterWebView(
         <body>
           <div class="header">
             <div>
-              <div class="title">PrinterDost Embedded-OS</div>
+              <div class="title">$printerBrand $printerName Web-OS</div>
               <div style="font-size:11px; color:#94A3B8; margin-top:2px;">Local Administrative Console Gateway</div>
             </div>
             <span class="status-badge status-ready" id="deviceStatus">ONLINE</span>
@@ -162,7 +189,7 @@ fun PrinterWebView(
             </div>
             <div class="info-row">
               <span class="info-label">MAC Address Address</span>
-              <span class="info-val">00:80:F4:11:9A:C3</span>
+              <span class="info-val" id="macAddress">$macAddress</span>
             </div>
             <div class="info-row">
               <span class="info-label">Web Engine Version</span>
@@ -344,8 +371,17 @@ fun PrinterWebView(
                         settings.allowContentAccess = true
                         settings.allowFileAccess = true
                         settings.javaScriptCanOpenWindowsAutomatically = true
+                        settings.setSupportMultipleWindows(false)
                         settings.useWideViewPort = true
                         settings.loadWithOverviewMode = true
+                        
+                        // Use a polished Desktop user agent to bypass any simplified or crippled mobile views/handling served by old local printer engines
+                        settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        
+                        // Enable comprehensive cookie store support for local routing, login states, and setup notice sessions
+                        val cookieManager = android.webkit.CookieManager.getInstance()
+                        cookieManager.setAcceptCookie(true)
+                        cookieManager.setAcceptThirdPartyCookies(this, true)
                         
                         settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
 
@@ -354,6 +390,11 @@ fun PrinterWebView(
                                 view: WebView?,
                                 request: WebResourceRequest?
                             ): Boolean {
+                                return false
+                            }
+
+                            @Deprecated("Deprecated in Java")
+                            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                                 return false
                             }
 
@@ -378,12 +419,43 @@ fun PrinterWebView(
                                 // Safely load fallback HTML when local printer is unreachable via public WAN
                                 view?.loadDataWithBaseURL("https://printerdost.local", simulatedHtml, "text/html", "UTF-8", null)
                             }
+
+                            override fun onRenderProcessGone(
+                                view: WebView?,
+                                detail: android.webkit.RenderProcessGoneDetail?
+                            ): Boolean {
+                                hasError = true
+                                view?.loadDataWithBaseURL("https://printerdost.local", simulatedHtml, "text/html", "UTF-8", null)
+                                return true // Prevent the app process from crashing
+                            }
                         }
 
                         webChromeClient = object : WebChromeClient() {
                             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                                 super.onProgressChanged(view, newProgress)
                                 loadingProgress = newProgress
+                            }
+
+                            // Auto-confirm alert dialogs used by printer portals to proceed past warnings/information popups
+                            override fun onJsAlert(
+                                view: WebView?,
+                                url: String?,
+                                message: String?,
+                                result: android.webkit.JsResult?
+                            ): Boolean {
+                                result?.confirm()
+                                return true
+                            }
+
+                            // Auto-confirm confirmation dialogs used by printer portals to permit setup configuration updates
+                            override fun onJsConfirm(
+                                view: WebView?,
+                                url: String?,
+                                message: String?,
+                                result: android.webkit.JsResult?
+                            ): Boolean {
+                                result?.confirm()
+                                return true
                             }
                         }
 
@@ -403,6 +475,15 @@ fun PrinterWebView(
                         currentUrl = url
                         hasError = false
                         view.loadUrl(url)
+                    }
+                },
+                onRelease = { view ->
+                    try {
+                        view.stopLoading()
+                        view.webViewClient = WebViewClient()
+                        view.webChromeClient = WebChromeClient()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
                 },
                 modifier = Modifier.fillMaxSize()
@@ -496,10 +577,6 @@ fun PrinterWebView(
                 val view = webViewRef
                 webViewRef = null
                 view?.stopLoading()
-                view?.clearHistory()
-                val parent = view?.parent as? ViewGroup
-                parent?.removeView(view)
-                view?.destroy()
             } catch (e: Exception) {
                 e.printStackTrace()
             }

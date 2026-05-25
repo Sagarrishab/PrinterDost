@@ -18,6 +18,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Gracefully catch and log any silent or unexpected crashes during runtime
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            android.util.Log.e("PRINTERDOST_CRASH", "CRITICAL FATAL EXCEPTION on thread '${thread.name}':", throwable)
+            // Call system default or terminate safely to prevent hanging
+            java.lang.System.exit(1)
+        }
+
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {

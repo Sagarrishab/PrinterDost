@@ -492,13 +492,32 @@ class PrinterViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Trigger direct administration link in webView context
      */
-    fun openAdminConsole(ip: String) {
-        val url = if (ip.startsWith("http://") || ip.startsWith("https://")) {
+    fun openAdminConsole(ip: String, printerName: String = "", printerModel: String = "", id: Int = 0) {
+        val baseUrl = if (ip.startsWith("http://") || ip.startsWith("https://")) {
             ip
         } else {
             "http://$ip"
         }
-        webViewUrl.value = url
+        val uri = try {
+            android.net.Uri.parse(baseUrl)
+        } catch (t: Throwable) {
+            null
+        }
+        val urlWithParams = if (uri != null) {
+            try {
+                uri.buildUpon()
+                    .appendQueryParameter("name", printerName)
+                    .appendQueryParameter("model", printerModel)
+                    .appendQueryParameter("id", id.toString())
+                    .build()
+                    .toString()
+            } catch (e: Exception) {
+                baseUrl
+            }
+        } else {
+            baseUrl
+        }
+        webViewUrl.value = urlWithParams
     }
 
     fun closeAdminConsole() {

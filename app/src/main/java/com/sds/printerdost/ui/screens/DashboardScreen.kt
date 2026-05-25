@@ -283,7 +283,7 @@ fun DashboardScreen(
                                 logs = logs.filter { it.printerId == selectedPrinter!!.id },
                                 onConsultAiClick = { viewModel.performAiDiagnosis(activeSymptom) },
                                 onDeleteClick = { viewModel.deletePrinter(selectedPrinter!!) },
-                                onOpenAdminClick = { viewModel.openAdminConsole(selectedPrinter!!.ipAddress) },
+                                onOpenAdminClick = { viewModel.openAdminConsole(selectedPrinter!!.ipAddress, selectedPrinter!!.name, selectedPrinter!!.brand, selectedPrinter!!.id) },
                                 onSingleTest = { viewModel.runSingleDiagnostics(selectedPrinter!!) }
                             )
                         } else {
@@ -379,7 +379,7 @@ fun DashboardScreen(
                                             logs = logs.filter { it.printerId == selectedPrinter!!.id },
                                             onConsultAiClick = { viewModel.performAiDiagnosis(activeSymptom) },
                                             onDeleteClick = { viewModel.deletePrinter(selectedPrinter!!) },
-                                            onOpenAdminClick = { viewModel.openAdminConsole(selectedPrinter!!.ipAddress) },
+                                            onOpenAdminClick = { viewModel.openAdminConsole(selectedPrinter!!.ipAddress, selectedPrinter!!.name, selectedPrinter!!.brand, selectedPrinter!!.id) },
                                             onSingleTest = { viewModel.runSingleDiagnostics(selectedPrinter!!) }
                                         )
                                     }
